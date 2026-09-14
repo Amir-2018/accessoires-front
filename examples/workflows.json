@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "description": "Workflows fonctionnels de démonstration ZEN.",
+  "workflows": [
+    {
+      "id": "customer-order-question",
+      "name": "Question client sur une commande",
+      "trigger": "Client connecté envoie une question contenant une référence CMD.",
+      "steps": [
+        "Vérifier que la commande appartient au client authentifié.",
+        "Créer une conversation privée liée à la commande.",
+        "Générer un brouillon avec le statut, les articles et le total.",
+        "Afficher la conversation dans l’Inbox de l’agent.",
+        "Permettre la correction, la validation et l’envoi.",
+        "Afficher le message envoyé dans Messages du client concerné."
+      ],
+      "access": { "client": "own_conversations_only", "agent": "assigned_or_unassigned", "supervisor": "escalated_conversations_only" }
+    },
+    {
+      "id": "agent-response-review",
+      "name": "Validation d’une réponse agent",
+      "trigger": "Une conversation est sélectionnée dans l’Inbox agent.",
+      "steps": [
+        "Lire le dernier message client.",
+        "Générer ou afficher le brouillon IA.",
+        "Modifier le texte si nécessaire.",
+        "Valider le brouillon.",
+        "Envoyer la réponse au client."
+      ]
+    },
+    {
+      "id": "supervisor-escalation",
+      "name": "Traitement d’une escalade",
+      "trigger": "Un agent escalade une conversation.",
+      "steps": [
+        "Passer la conversation au statut escalade.",
+        "La rendre visible dans la file Escalades du Supervisor.",
+        "Permettre au Supervisor de corriger, valider et envoyer une réponse.",
+        "Conserver l’audit de la décision et du message envoyé."
+      ]
+    },
+    {
+      "id": "faq-management",
+      "name": "Gestion des FAQ",
+      "trigger": "Agent ou Supervisor ouvre Connaissances.",
+      "steps": [
+        "Rechercher par titre, catégorie ou contenu.",
+        "Créer une FAQ en brouillon ou publiée.",
+        "Modifier le contenu, la catégorie ou le statut.",
+        "Supprimer une FAQ obsolète."
+      ],
+      "access": ["agent", "supervisor"]
+    }
+  ]
+}

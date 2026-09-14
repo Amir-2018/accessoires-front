@@ -1,0 +1,3 @@
+export function InboxHeader() {
+  return <div className="page-heading"><div><p className="eyebrow">ESPACE OPÉRATIONNEL</p><h1>Inbox</h1><p className="heading-sub">Traitez les demandes avec précision, une réponse à la fois.</p></div><div className="heading-actions"><button className="icon-button" aria-label="Notifications">◌<span className="notification-dot" /></button><button className="outline-button">Aujourd&apos;hui <span>ersist</span></button></div></div>;
+}

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "description": "Jeu de données non sensible pour démonstration locale de ZEN.",
+  "notes": [
+    "Les mots de passe ci-dessous sont réservés à la démonstration locale.",
+    "Ne pas réutiliser ces comptes ou mots de passe en production.",
+    "Le seed Prisma crée les utilisateurs, le catalogue et les FAQ de base."
+  ],
+  "users": [
+    { "username": "client.demo", "email": "client@zen.local", "role": "client", "demoPassword": "password123" },
+    { "username": "agent.demo", "email": "agent@zen.local", "role": "agent", "demoPassword": "password123" },
+    { "username": "supervisor.demo", "email": "supervisor@zen.local", "role": "supervisor", "demoPassword": "password123" }
+  ],
+  "catalogue": [
+    { "id": "a-robe", "name": "Robe fluide", "category": "Robes", "priceDT": 499, "stock": 16 },
+    { "id": "a-veste", "name": "Veste en denim", "category": "Vestes", "priceDT": 699, "stock": 11 },
+    { "id": "a-chemise", "name": "Chemise en lin", "category": "Chemises", "priceDT": 349, "stock": 24 },
+    { "id": "a-pantalon", "name": "Pantalon droit", "category": "Pantalons", "priceDT": 449, "stock": 19 },
+    { "id": "a-pull", "name": "Pull en maille", "category": "Pulls", "priceDT": 399, "stock": 14 },
+    { "id": "a-sneakers", "name": "Sneakers en toile", "category": "Chaussures", "priceDT": 549, "stock": 21 }
+  ],
+  "faq": [
+    { "id": "kb-livraison", "title": "Suivi de livraison", "category": "Livraison", "status": "publie" },
+    { "id": "kb-retour", "title": "Retours et échanges", "category": "Retours", "status": "publie" },
+    { "id": "kb-paiement", "title": "Paiement de la commande", "category": "Paiement", "status": "publie" }
+  ],
+  "orders": [],
+  "conversations": []
+}
