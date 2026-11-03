@@ -70,9 +70,9 @@ export default function LoginPage() {
 
   return (
     <main className="login-shell">
-      <header className="login-navbar"><Link href="/" className="login-navbar-brand"><span className="brand-mark login-logo">O</span><span>Ouou Accessoires</span></Link><Link href="/" className="login-home-link">Retour à l’accueil</Link></header>
+      <header className="login-navbar"><Link href="/" className="login-navbar-brand"><img className="login-logo" src="/logo.jpg" alt="" /><span>Ouou Accessoires</span></Link><Link href="/" className="login-home-link">Retour à l’accueil</Link></header>
       <div className="login-card">
-        <div className="login-brand"><span className="brand-mark login-logo">O</span><div><p className="eyebrow">OUOU ACCESSOIRES</p><h1>{mode === "login" ? "Connexion" : "Créer un compte"}</h1><p className="heading-sub">{mode === "login" ? "Accédez à votre espace client ou superviseur." : "Créez votre compte client pour commander en ligne."}</p></div></div>
+        <div className="login-brand"><img className="login-logo" src="/logo.jpg" alt="" /><div><p className="eyebrow">OUOU ACCESSOIRES</p><h1>{mode === "login" ? "Connexion" : "Créer un compte"}</h1><p className="heading-sub">{mode === "login" ? "Accédez à votre espace client ou superviseur." : "Créez votre compte client pour commander en ligne."}</p></div></div>
         <form className="login-form" onSubmit={handleSubmit} noValidate>
           <label className="login-field"><span>{mode === "register" ? "Nom d’utilisateur" : "Nom d’utilisateur ou email"}</span><input type="text" autoComplete="username" placeholder={mode === "register" ? "ex. mon.compte" : "ex. client.demo ou client@zen.local"} value={identifier} onChange={(e) => setIdentifier(e.target.value)} /></label>
           {mode === "register" && <label className="login-field"><span>Email</span><input type="email" autoComplete="email" placeholder="vous@exemple.com" value={email} onChange={(e) => setEmail(e.target.value)} /></label>}

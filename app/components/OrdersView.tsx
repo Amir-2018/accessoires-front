@@ -5,6 +5,7 @@ import { useRequireRole } from "../lib/auth";
 import { deleteOrder, formatPrice, getOrders, updateOrderStatus } from "../lib/store";
 import { ORDER_STATUS_LABELS, type OrderStatus } from "../interfaces/Order";
 import { Icon } from "./Icon";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
 const STATUSES: OrderStatus[] = ["en-attente", "validee", "expediee", "livree"];
@@ -16,6 +17,7 @@ export function OrdersView() {
   const { user, ready } = useRequireRole(["supervisor"]);
   const [filter, setFilter] = useState<"Toutes" | OrderStatus>("Toutes");
   const [refresh, setRefresh] = useState(0);
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
 
   const orders = useMemo(
     () => getOrders("supervisor").filter((o) => filter === "Toutes" || o.status === filter),
@@ -28,7 +30,6 @@ export function OrdersView() {
   }
 
   function removeOrder(orderId: string) {
-    if (!window.confirm(`Supprimer la commande ${orderId} ? Cette action est irréversible.`)) return;
     deleteOrder(orderId);
     setRefresh((n) => n + 1);
   }
@@ -72,13 +73,21 @@ export function OrdersView() {
                       <select value={o.status} onChange={(e) => setStatus(o.id, e.target.value as OrderStatus)} aria-label={`Statut de ${o.id}`}>
                         {STATUSES.map((s) => <option key={s} value={s}>{ORDER_STATUS_LABELS[s]}</option>)}
                       </select>
-                      <button className="icon-button danger-button" type="button" onClick={() => removeOrder(o.id)} aria-label={`Supprimer la commande ${o.id}`} title="Supprimer la commande"><Icon icon={faTrash} /></button>
+                      <button className="icon-button danger-button" type="button" onClick={() => setOrderToDelete(o.id)} aria-label={`Supprimer la commande ${o.id}`} title="Supprimer la commande"><Icon icon={faTrash} /></button>
                     </td>
                   </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {orderToDelete && (
+        <ConfirmDialog
+          title="Supprimer cette commande ?"
+          description={`La commande ${orderToDelete} sera supprimée définitivement.`}
+          onCancel={() => setOrderToDelete(null)}
+          onConfirm={() => { removeOrder(orderToDelete); setOrderToDelete(null); }}
+        />
+      )}
     </div>
   );
 }

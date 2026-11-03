@@ -7,6 +7,8 @@ import { Catalogue } from "./shop-catalogue";
 import { Panier } from "./shop-panier";
 import { ClientMessages, MesCommandes } from "./shop-orders";
 import { ArticleDetail } from "./ArticleDetail";
+import { faFacebookF, faInstagram } from "@fortawesome/free-brands-svg-icons";
+import { Icon } from "./Icon";
 
 /**
  * Accueil = espace client : navbar boutique (panier + commandes + messages),
@@ -33,6 +35,24 @@ export function ShopHome({ initialView = "catalogue" }: { initialView?: ShopView
           {view === "commandes" && <MesCommandes goLogin={goLogin} />}
           {view === "messages" && <ClientMessages goLogin={goLogin} selectedId={selectedId} />}
         </div>
+        <footer className="shop-footer">
+          <div className="shop-footer-inner">
+            <div className="shop-footer-brand">
+              <img className="shop-footer-mark" src="/logo.jpg" alt="" />
+              <div><strong>OUOU ACCESSOIRES</strong><span>Les détails qui font votre style.</span></div>
+            </div>
+            <div className="shop-footer-social">
+              <span>Suivez-nous</span>
+              <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram Ouou Accessoires">
+                <Icon icon={faInstagram} />
+              </a>
+              <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Facebook Ouou Accessoires">
+                <Icon icon={faFacebookF} />
+              </a>
+            </div>
+            <p className="shop-footer-copyright">© {new Date().getFullYear()} Ouou Accessoires. Tous droits réservés.</p>
+          </div>
+        </footer>
       </main>
     </CartContext.Provider>
   );

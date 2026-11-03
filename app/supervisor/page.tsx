@@ -8,8 +8,9 @@ import { useRequireRole } from "../lib/auth";
 import { ArticlesAdmin } from "../components/ArticlesAdmin";
 import { ClientsAdmin } from "../components/ClientsAdmin";
 import { CategoriesAdmin } from "../components/CategoriesAdmin";
+import { PromotionsAdmin } from "../components/PromotionsAdmin";
 
-type SupView = "commandes" | "articles" | "clients" | "categories";
+type SupView = "commandes" | "articles" | "clients" | "categories" | "promotions";
 
 /** Compte superviseur : sidebar de gestion + pilotage. */
 export default function SupervisorSpace() {
@@ -22,7 +23,7 @@ export default function SupervisorSpace() {
   return (
     <main className="app-shell">
       <header className="topbar">
-        <Link href="/" className="topbar-brand topbar-brand-link" aria-label="Retour à l’accueil"><span className="brand-dot" /> Ouou Accessoires <span className="topbar-divider" /> <span className="topbar-context">Espace superviseur</span></Link>
+        <Link href="/" className="topbar-brand topbar-brand-link" aria-label="Retour à l’accueil"><img className="brand-logo-nav" src="/logo.jpg" alt="" /> Ouou Accessoires <span className="topbar-divider" /> <span className="topbar-context">Espace superviseur</span></Link>
         <div className="topbar-user">
           <div className="user-menu">
             <button className="mini-avatar user-menu-trigger" onClick={() => setUserMenuOpen((open) => !open)} aria-label="Ouvrir le menu utilisateur" aria-expanded={userMenuOpen}>
@@ -41,6 +42,7 @@ export default function SupervisorSpace() {
         {view === "articles" && <ArticlesAdmin />}
         {view === "clients" && <ClientsAdmin />}
         {view === "categories" && <CategoriesAdmin />}
+        {view === "promotions" && <PromotionsAdmin />}
       </div>
     </main>
   );

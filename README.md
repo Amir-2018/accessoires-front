@@ -4,7 +4,7 @@ ZEN est une application de service client omnicanal : boutique, suivi de command
 
 ## Installation
 
-Prérequis : Node.js 20+, pnpm 12+, PostgreSQL accessible.
+Prérequis : Node.js 20+, pnpm 12+, MySQL accessible.
 
 ```bash
 pnpm install
@@ -67,7 +67,7 @@ backend/prisma/        Schéma PostgreSQL et seed de démonstration
 examples/              Exports JSON des workflows et données de démonstration
 ```
 
-Le frontend utilise Next.js/React. Le backend expose une API Express protégée par cookie JWT. Prisma gère PostgreSQL. Les conversations, réponses IA, validations, envois et escalades sont persistés côté backend.
+Le frontend utilise Next.js/React. Le backend expose une API Express protégée par cookie JWT. Prisma gère MySQL. Les promotions et leurs périodes sont persistées côté backend, avec des dates évaluées en UTC.
 
 ## Choix techniques
 
@@ -92,7 +92,7 @@ Le frontend utilise Next.js/React. Le backend expose une API Express protégée 
 - Les commandes invité sont suivies par référence/token ; elles ne donnent pas accès aux messages privés d’un compte client.
 - Les médias du catalogue utilisent des URLs externes Unsplash.
 - Aucun système de stockage de fichiers, de notifications temps réel ou de gestion avancée des rôles n’est inclus.
-- La disponibilité de PostgreSQL dépend du fournisseur configuré dans `DATABASE_URL`.
+- La disponibilité de MySQL dépend du fournisseur configuré dans `DATABASE_URL`.
 
 ## Vérification
 

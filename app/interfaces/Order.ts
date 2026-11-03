@@ -5,6 +5,8 @@ export interface OrderItem {
   articleId: string;
   nom: string;
   prix: number;
+  prixOriginal?: number;
+  discountPercent?: number;
   quantite: number;
 }
 
@@ -22,6 +24,9 @@ export interface Order {
   clientTelephone?: string;
   clientAdresse?: string;
   items: OrderItem[];
+  subtotal?: number;
+  discountTotal?: number;
+  promotionSlug?: string;
   total: number;
   status: OrderStatus;
   createdAt: string;

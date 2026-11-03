@@ -2,6 +2,7 @@ import type { Article } from "../interfaces/Article";
 import type { Order, OrderStatus } from "../interfaces/Order";
 import type { MessageAuthorRole, OrderMessage } from "../interfaces/OrderMessage";
 import type { User, UserRole } from "../interfaces/User";
+import { isPromotionInDateRange } from "./promotions";
 
 const USER_KEY = "zen:user";
 const ORDERS_KEY = "zen:orders";
@@ -87,18 +88,27 @@ export function getOrders(role: UserRole, clientId?: string): Order[] {
 export function createOrder(
   user: SessionUser | GuestCustomer,
   items: { article: Article; quantite: number }[],
-  reference?: string,
+  options: { reference?: string; promotionSlug?: string | null; subtotal?: number; discountTotal?: number; total?: number } = {},
 ): Order {
   const isGuest = "telephone" in user;
-  const orderItems = items.map((i) => ({
-    articleId: i.article.id,
-    nom: i.article.nom,
-    prix: i.article.prix,
-    quantite: i.quantite,
-  }));
-  const total = orderItems.reduce((sum, i) => sum + i.prix * i.quantite, 0);
+  const orderItems = items.map((i) => {
+    const promotion = i.article.promotion && isPromotionInDateRange(i.article.promotion) ? i.article.promotion : null;
+    const discountPercent = promotion && promotion.discountPercent > 0 ? Math.max(0, Math.min(100, promotion.discountPercent)) : 0;
+    return {
+      articleId: i.article.id,
+      nom: i.article.nom,
+      prixOriginal: i.article.prix,
+      discountPercent,
+      prix: Math.round(i.article.prix * (1 - discountPercent / 100) * 1000) / 1000,
+      quantite: i.quantite,
+    };
+  });
+  const subtotal = options.subtotal ?? items.reduce((sum, item) => sum + item.article.prix * item.quantite, 0);
+  const calculatedTotal = orderItems.reduce((sum, item) => sum + item.prix * item.quantite, 0);
+  const total = options.total ?? calculatedTotal;
+  const discountTotal = options.discountTotal ?? subtotal - total;
   const order: Order = {
-    id: reference ?? `CMD-${Date.now().toString().slice(-6)}`,
+    id: options.reference ?? `CMD-${Date.now().toString().slice(-6)}`,
     clientId: isGuest ? `guest-${Date.now()}` : user.id,
     clientNom: isGuest ? `${user.prenom} ${user.nom}` : user.username,
     ...(isGuest
@@ -110,6 +120,9 @@ export function createOrder(
         }
       : { clientEmail: user.email }),
     items: orderItems,
+    subtotal,
+    discountTotal,
+    ...(options.promotionSlug ? { promotionSlug: options.promotionSlug } : {}),
     total,
     status: "en-attente",
     createdAt: new Date().toISOString(),
