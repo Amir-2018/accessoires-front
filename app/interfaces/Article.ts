@@ -10,12 +10,12 @@ export interface Article {
   stock: number;
   categorie: string;
   promotion?: {
-    id?: string;
+    id: string;
     slug: string;
-    title?: string;
+    title: string;
     discountPercent: number;
-    startDate?: string | null;
-    endDate?: string | null;
+    startDate: string;
+    endDate: string;
     isActive?: boolean;
   } | null;
 }

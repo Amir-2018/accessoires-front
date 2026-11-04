@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CartContext, ShopNav, useCartState, type ShopView } from "./shop-shell";
 import { Catalogue } from "./shop-catalogue";
@@ -18,7 +18,18 @@ export function ShopHome({ initialView = "catalogue" }: { initialView?: ShopView
   const router = useRouter();
   const [view, setView] = useState<ShopView>(initialView);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [catalogueRefreshKey, setCatalogueRefreshKey] = useState(0);
   const { value, articles } = useCartState();
+  const { setPromotionSlug } = value;
+
+  const returnHome = useCallback(() => {
+    setPromotionSlug(null);
+    setSelectedId(null);
+    setView("catalogue");
+    setCatalogueRefreshKey((key) => key + 1);
+    router.replace("/");
+  }, [router, setPromotionSlug]);
 
   function goLogin() {
     router.push("/login");
@@ -26,12 +37,12 @@ export function ShopHome({ initialView = "catalogue" }: { initialView?: ShopView
 
   return (
     <CartContext.Provider value={value}>
-      <main className="app-shell shop-shell">
-        <ShopNav view={view} onNavigate={setView} />
+      <main className={`app-shell shop-shell${sidebarOpen ? " client-sidebar-open" : ""}`}>
+        <ShopNav view={view} onNavigate={setView} onReturnHome={returnHome} sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((open) => !open)} />
         <div className="page-main shop-main">
-          {view === "catalogue" && <Catalogue onGoCart={() => setView("panier")} onOpenArticle={(article) => { setSelectedId(article.id); setView("detail"); }} />}
+          {view === "catalogue" && <Catalogue key={catalogueRefreshKey} onGoCart={() => setView("panier")} onOpenArticle={(article) => { setSelectedId(article.id); setView("detail"); }} />}
           {view === "detail" && selectedId && articles.some((article) => article.id === selectedId) && <ArticleDetail article={articles.find((article) => article.id === selectedId)!} onBack={() => setView("catalogue")} onGoCart={() => setView("panier")} />}
-          {view === "panier" && <Panier goCommandes={() => setView("commandes")} />}
+          {view === "panier" && <Panier onReturnHome={returnHome} />}
           {view === "commandes" && <MesCommandes goLogin={goLogin} />}
           {view === "messages" && <ClientMessages goLogin={goLogin} selectedId={selectedId} />}
         </div>

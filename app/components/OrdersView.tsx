@@ -58,13 +58,14 @@ export function OrdersView() {
 
       <div className="panel order-table-panel">
         <table className="order-table">
-          <thead><tr><th>N°</th><th>Client</th><th>Articles</th><th>Total</th><th>Statut</th><th>Date</th><th>Action</th></tr></thead>
+          <thead><tr><th>N°</th><th>Client</th><th>Téléphone</th><th>Articles</th><th>Total</th><th>Statut</th><th>Date</th><th>Action</th></tr></thead>
           <tbody>
-            {orders.length === 0 && <tr><td colSpan={7} className="muted-label">Aucune commande.</td></tr>}
+            {orders.length === 0 && <tr><td colSpan={8} className="muted-label">Aucune commande.</td></tr>}
             {orders.map((o) => (
                   <tr key={o.id}>
                     <td><strong>{o.id}</strong></td>
                     <td>{o.clientNom}</td>
+                    <td>{o.clientTelephone || "—"}</td>
                     <td>{o.items.map((i) => `${i.nom} ×${i.quantite}`).join(", ")}</td>
                     <td>{formatPrice(o.total)}</td>
                     <td><span className="status-pill status-in-progress">{ORDER_STATUS_LABELS[o.status]}</span></td>

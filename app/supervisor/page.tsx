@@ -9,6 +9,8 @@ import { ArticlesAdmin } from "../components/ArticlesAdmin";
 import { ClientsAdmin } from "../components/ClientsAdmin";
 import { CategoriesAdmin } from "../components/CategoriesAdmin";
 import { PromotionsAdmin } from "../components/PromotionsAdmin";
+import { faBars, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { Icon } from "../components/Icon";
 
 type SupView = "commandes" | "articles" | "clients" | "categories" | "promotions";
 
@@ -17,13 +19,14 @@ export default function SupervisorSpace() {
   const { user, ready, signOut } = useRequireRole(["supervisor"]);
   const [view, setView] = useState<SupView>("commandes");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   if (!ready || !user) return <main className="login-shell"><p>Chargement…</p></main>;
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell admin-shell${sidebarOpen ? "" : " admin-sidebar-collapsed"}`}>
       <header className="topbar">
-        <Link href="/" className="topbar-brand topbar-brand-link" aria-label="Retour à l’accueil"><img className="brand-logo-nav" src="/logo.jpg" alt="" /> Ouou Accessoires <span className="topbar-divider" /> <span className="topbar-context">Espace superviseur</span></Link>
+        <Link href="/" className="topbar-brand topbar-brand-link" aria-label="Retour à l’accueil"><img className="brand-logo-nav" src="/logo.jpg" alt="" /> Ouou Accessoires</Link>
         <div className="topbar-user">
           <div className="user-menu">
             <button className="mini-avatar user-menu-trigger" onClick={() => setUserMenuOpen((open) => !open)} aria-label="Ouvrir le menu utilisateur" aria-expanded={userMenuOpen}>
@@ -33,9 +36,12 @@ export default function SupervisorSpace() {
           </div>
         </div>
       </header>
+      <button className={`menu-toggle admin-menu-toggle${sidebarOpen ? " is-open" : ""}`} onClick={() => setSidebarOpen((open) => !open)} aria-label={sidebarOpen ? "Masquer le menu" : "Afficher le menu"} aria-expanded={sidebarOpen} aria-controls="supervisor-sidebar"><Icon icon={sidebarOpen ? faXmark : faBars} /></button>
       <Sidebar
         view={view}
         onNavigate={setView}
+        username={user.username}
+        open={sidebarOpen}
       />
       <div className="page-main">
         {view === "commandes" && <OrdersView />}

@@ -1,6 +1,7 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? (process.env.NODE_ENV === "production" ? "" : "http://localhost:4000");
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+  console.log('API_URL is ',API_URL)
   if (!API_URL && process.env.NODE_ENV === "production") {
     throw new Error("URL du backend manquante. Configurez NEXT_PUBLIC_API_URL dans le service frontend.");
   }

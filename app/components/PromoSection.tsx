@@ -5,7 +5,19 @@ import { faArrowRightLong, faChevronLeft, faChevronRight, faPause, faPlay, faTag
 import Link from "next/link";
 import { Icon } from "./Icon";
 import { apiFetch } from "../lib/api";
+import type { Article } from "../interfaces/Article";
 import type { Promotion } from "../interfaces/Promotion";
+
+type PromotionProducts = {
+  slug: string;
+  images: { id: string; src: string }[];
+  error?: string;
+};
+
+type ArticlePage = {
+  articles: Article[];
+  pagination: { totalPages: number };
+};
 
 export function PromoSection({ onExplore }: { onExplore: () => void }) {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
@@ -16,6 +28,20 @@ export function PromoSection({ onExplore }: { onExplore: () => void }) {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [loadError, setLoadError] = useState("");
   const promotion = promotions[activePromotion];
+  const [promotionProducts, setPromotionProducts] = useState<PromotionProducts | null>(null);
+  const [promotionImageSelection, setPromotionImageSelection] = useState<{ slug: string; index: number } | null>(null);
+  const promotionSlug = promotion?.slug;
+  const currentPromotionProducts = promotionProducts?.slug === promotionSlug ? promotionProducts : null;
+  const promotionImages = currentPromotionProducts?.images ?? [];
+  const promotionImageIndex = promotionImageSelection && promotionImageSelection.slug === promotionSlug && promotionImageSelection.index < promotionImages.length
+    ? promotionImageSelection.index
+    : 0;
+  const currentPromotionImage = promotionImages[promotionImageIndex];
+  const displayedPromotionImages = currentPromotionImage
+    ? promotionImages.length > 1
+      ? [promotionImages[(promotionImageIndex - 1 + promotionImages.length) % promotionImages.length], currentPromotionImage]
+      : [currentPromotionImage]
+    : [];
 
   useEffect(() => {
     let active = true;
@@ -32,6 +58,52 @@ export function PromoSection({ onExplore }: { onExplore: () => void }) {
       });
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    if (!promotionSlug) return;
+
+    let active = true;
+    async function loadPromotionImages() {
+      try {
+        const firstPage = await apiFetch<ArticlePage>(`/api/articles?promotion=${encodeURIComponent(promotionSlug)}&page=1&pageSize=24`);
+        const remainingPages = await Promise.all(
+          Array.from({ length: Math.max(0, firstPage.pagination.totalPages - 1) }, (_, index) =>
+            apiFetch<ArticlePage>(`/api/articles?promotion=${encodeURIComponent(promotionSlug)}&page=${index + 2}&pageSize=24`),
+          ),
+        );
+        if (active) {
+          setPromotionProducts({
+            slug: promotionSlug,
+            images: [...firstPage.articles, ...remainingPages.flatMap((page) => page.articles)]
+              .filter((article) => article.image)
+              .map((article) => ({ id: article.id, src: article.image })),
+          });
+        }
+      } catch (reason: unknown) {
+        if (!active) return;
+        setPromotionProducts({
+          slug: promotionSlug,
+          images: [],
+          error: reason instanceof Error ? reason.message : "Impossible de charger les images des articles en promotion.",
+        });
+      }
+    }
+
+    void loadPromotionImages();
+
+    return () => { active = false; };
+  }, [promotionSlug]);
+
+  useEffect(() => {
+    if (prefersReducedMotion || promotionImages.length < 2 || !promotionSlug) return;
+
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        setPromotionImageSelection({ slug: promotionSlug, index: (promotionImageIndex + 1) % promotionImages.length });
+      }
+    }, 3600);
+    return () => window.clearInterval(timer);
+  }, [prefersReducedMotion, promotionImageIndex, promotionImages.length, promotionSlug]);
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -60,8 +132,8 @@ export function PromoSection({ onExplore }: { onExplore: () => void }) {
       <div className="promo-heading">
         <div>
           <p className="eyebrow promo-eyebrow">LES BONS PLANS OUOU</p>
-          <h2 id="promo-title">Les offres qui font briller votre style</h2>
-          <p className="heading-sub promo-heading-sub">Vos accessoires préférés, à prix doux.</p>
+          <h2 id="promo-title">Bienvenue ouou Accessoires </h2>
+          <p className="heading-sub promo-heading-sub">Profitez de nos offres en cours.</p>
         </div>
         <button className="outline-button promo-all-button" onClick={onExplore}>
           Voir tous les articles <Icon icon={faArrowRightLong} />
@@ -86,12 +158,20 @@ export function PromoSection({ onExplore }: { onExplore: () => void }) {
           aria-roledescription="diapositive"
           aria-label={`Promotion ${activePromotion + 1} sur ${promotions.length}`}
         >
-          <img className="promo-slide-image" src={promotion.image} alt={promotion.imageAlt} />
+          {displayedPromotionImages.map((image) => (
+            <img
+              key={image.id}
+              className={`promo-slide-image${image.id === currentPromotionImage?.id ? " is-active" : ""}`}
+              src={image.src}
+              alt=""
+              aria-hidden="true"
+            />
+          ))}
           <div className="promo-slide-content">
-            <span className="promo-badge"><Icon icon={faTag} /> {promotion.badge}</span>
-            <p className="promo-kicker">{promotion.kicker}</p>
+            <span className="promo-badge"><Icon icon={faTag} /> Offre valable du {formatDate(promotion.startDate)} au {formatDate(promotion.endDate)}</span>
             <h3>{promotion.title}</h3>
-            <p className="promo-description">{promotion.description}</p>
+            <p className="promo-description">-{promotion.discountPercent}% sur les articles associés à cette promotion.</p>
+            {currentPromotionProducts?.error && <span className="promo-slide-products-error" role="status">{currentPromotionProducts.error}</span>}
             <Link className="promo-cta" href={`/promotions/${promotion.slug}`}>
               Découvrir l&apos;offre <Icon icon={faArrowRightLong} />
             </Link>
@@ -135,4 +215,8 @@ export function PromoSection({ onExplore }: { onExplore: () => void }) {
       </div>}
     </section>
   );
+}
+
+function formatDate(value: string) {
+  return new Date(`${value.slice(0, 10)}T00:00:00`).toLocaleDateString("fr-FR");
 }

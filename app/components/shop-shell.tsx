@@ -1,10 +1,11 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { getArticles, getSessionUser, type SessionUser } from "../lib/store";
 import type { Article } from "../interfaces/Article";
-import { faArrowRightFromBracket, faArrowUpRightFromSquare, faBoxOpen, faCartShopping, faChevronDown, faLocationDot, faRightToBracket, faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
+import { faArrowRightFromBracket, faArrowUpRightFromSquare, faBars, faBoxOpen, faCartShopping, faChevronDown, faLocationDot, faTriangleExclamation, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { faFacebookF, faInstagram, faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { Icon } from "./Icon";
 
@@ -24,6 +25,75 @@ type CartCtx = {
 };
 
 const CartContext = createContext<CartCtx | null>(null);
+const CART_STORAGE_KEY = "zen:cart";
+const EMPTY_CART: Record<string, number> = {};
+
+type SavedCart = {
+  cart: Record<string, number>;
+  articles: Article[];
+};
+
+let savedCartRaw: string | null | undefined;
+let savedCartSnapshot: SavedCart | null = null;
+const cartListeners = new Set<() => void>();
+
+function getSavedCartSnapshot(): SavedCart | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (raw === savedCartRaw) return savedCartSnapshot;
+    savedCartRaw = raw;
+    if (!raw) {
+      savedCartSnapshot = null;
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<SavedCart>;
+    savedCartSnapshot =
+      parsed.cart && typeof parsed.cart === "object" && Array.isArray(parsed.articles)
+        ? { cart: parsed.cart, articles: parsed.articles }
+        : null;
+    return savedCartSnapshot;
+  } catch (reason) {
+    console.error("Impossible de restaurer le panier enregistré.", reason);
+    savedCartRaw = null;
+    savedCartSnapshot = null;
+    return null;
+  }
+}
+
+function subscribeToSavedCart(listener: () => void) {
+  cartListeners.add(listener);
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === CART_STORAGE_KEY) {
+      savedCartRaw = undefined;
+      getSavedCartSnapshot();
+      listener();
+    }
+  };
+  window.addEventListener("storage", onStorage);
+  return () => {
+    cartListeners.delete(listener);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+function updateSavedCart(nextCart: SavedCart | null) {
+  savedCartSnapshot = nextCart;
+  try {
+    if (nextCart) {
+      savedCartRaw = JSON.stringify(nextCart);
+      localStorage.setItem(CART_STORAGE_KEY, savedCartRaw);
+    } else {
+      savedCartRaw = null;
+      localStorage.removeItem(CART_STORAGE_KEY);
+    }
+  } catch (reason) {
+    console.error("Impossible d’enregistrer le panier.", reason);
+  }
+  cartListeners.forEach((listener) => listener());
+}
 
 export function useCart() {
   const ctx = useContext(CartContext);
@@ -32,12 +102,18 @@ export function useCart() {
 }
 
 export function useCartState() {
-  const [cart, setCart] = useState<Record<string, number>>({});
-  const [articles, setArticles] = useState<Article[]>(() => getArticles());
+  const [baseArticles, setBaseArticles] = useState<Article[]>(() => getArticles());
+  const savedCart = useSyncExternalStore(subscribeToSavedCart, getSavedCartSnapshot, () => null);
+  const cart = savedCart?.cart ?? EMPTY_CART;
+  const articles = useMemo(() => {
+    const merged = new Map((savedCart?.articles ?? []).map((article) => [article.id, article]));
+    baseArticles.forEach((article) => merged.set(article.id, article));
+    return Array.from(merged.values());
+  }, [baseArticles, savedCart]);
   const [promotionSlug, setPromotionSlug] = useState<string | null>(null);
 
   const updateArticles = useCallback((nextArticles: Article[]) => {
-    setArticles((current) => {
+    setBaseArticles((current) => {
       const merged = new Map(current.map((article) => [article.id, article]));
       nextArticles.forEach((article) => merged.set(article.id, article));
       return Array.from(merged.values());
@@ -45,13 +121,18 @@ export function useCartState() {
   }, []);
 
   function changeQty(article: Article, delta: number) {
-    setCart((prev) => {
-      const next = Math.max(0, Math.min(article.stock, (prev[article.id] ?? 0) + delta));
-      return { ...prev, [article.id]: next };
-    });
+    const current = getSavedCartSnapshot();
+    const nextQty = Math.max(0, Math.min(article.stock, (current?.cart[article.id] ?? 0) + delta));
+    const nextCart = { ...(current?.cart ?? {}), [article.id]: nextQty };
+    const nextArticles = new Map((current?.articles ?? []).map((savedArticle) => [savedArticle.id, savedArticle]));
+    if (nextQty > 0) nextArticles.set(article.id, article);
+    else nextArticles.delete(article.id);
+    updateSavedCart({ cart: nextCart, articles: Array.from(nextArticles.values()) });
   }
 
-  const clearCart = useCallback(() => setCart({}), []);
+  const clearCart = useCallback(() => {
+    updateSavedCart(null);
+  }, []);
   const cartLines = articles.filter((a) => (cart[a.id] ?? 0) > 0);
   const cartCount = cartLines.reduce((n, a) => n + (cart[a.id] ?? 0), 0);
   const cartTotal = cartLines.reduce((sum, a) => sum + a.prix * (cart[a.id] ?? 0), 0);
@@ -62,13 +143,14 @@ export function useCartState() {
   return { value, articles, cart, cartLines, cartCount, cartTotal };
 }
 
-export function ShopNav({ view, onNavigate }: { view: ShopView; onNavigate: (v: ShopView) => void }) {
+export function ShopNav({ view, onNavigate, onReturnHome, sidebarOpen, onToggleSidebar }: { view: ShopView; onNavigate: (v: ShopView) => void; onReturnHome: () => void; sidebarOpen: boolean; onToggleSidebar: () => void }) {
   const router = useRouter();
   const { cartCount } = useCart();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [logoutConfirmationOpen, setLogoutConfirmationOpen] = useState(false);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -86,6 +168,11 @@ export function ShopNav({ view, onNavigate }: { view: ShopView; onNavigate: (v: 
     router.push("/login");
   }
 
+  function closeSidebar() {
+    onToggleSidebar();
+    menuToggleRef.current?.focus();
+  }
+
   useEffect(() => {
     if (!logoutConfirmationOpen) return;
 
@@ -100,8 +187,8 @@ export function ShopNav({ view, onNavigate }: { view: ShopView; onNavigate: (v: 
   return (
     <>
       <header className="topbar shop-topbar">
-        <button className="topbar-brand topbar-brand-link" onClick={() => router.push("/")} aria-label="Retour à l’accueil"><img className="brand-logo-nav" src="/logo.jpg" alt="" /> Ouou Accessoires {hydrated && user && <><span className="topbar-divider" /> <span className="topbar-context">Boutique</span></>}</button>
-        <details className="shop-about-menu">
+        <button className="topbar-brand topbar-brand-link" onClick={onReturnHome} aria-label="Retour à l’accueil"><img className="brand-logo-nav" src="/logo.jpg" alt="" /> Ouou Accessoires</button>
+        {!(hydrated && user?.role === "supervisor") && <details className="shop-about-menu">
           <summary>À propos de nous <Icon icon={faChevronDown} /></summary>
           <div className="shop-about-panel">
             <p className="eyebrow">NOTRE UNIVERS</p>
@@ -109,10 +196,12 @@ export function ShopNav({ view, onNavigate }: { view: ShopView; onNavigate: (v: 
             <p className="shop-about-description">Des accessoires choisis avec soin pour ajouter une touche personnelle à votre style, chaque jour.</p>
             <div className="shop-about-socials" aria-label="Réseaux sociaux">
               <span className="shop-about-social unavailable" aria-label="Instagram, bientôt disponible"><Icon icon={faInstagram} /><span>Instagram <small>Bientôt</small></span></span>
-              <span className="shop-about-social unavailable" aria-label="Facebook, bientôt disponible"><Icon icon={faFacebookF} /><span>Facebook <small>Bientôt</small></span></span>
+              <a className="shop-about-social" href="https://www.facebook.com/search/top?q=ouou" target="_blank" rel="noopener noreferrer" aria-label="Facebook Ouou Accessoires">
+                <Icon icon={faFacebookF} /><span>Facebook <small>Nous suivre</small></span>
+              </a>
             </div>
-            <a className="shop-about-contact" href="https://wa.me/21629467586" target="_blank" rel="noopener noreferrer">
-              <Icon icon={faWhatsapp} /><span><strong>WhatsApp</strong><small>+216 29 467 586</small></span>
+            <a className="shop-about-contact" href="https://wa.me/21620000801" target="_blank" rel="noopener noreferrer">
+              <Icon icon={faWhatsapp} /><span><strong>WhatsApp</strong><small>+216 20 000 801</small></span>
             </a>
             <div className="shop-about-location">
               <div className="shop-about-contact"><Icon icon={faLocationDot} /><span><strong>Nous trouver</strong><small>Bizerte, Tunisie</small></span></div>
@@ -127,12 +216,8 @@ export function ShopNav({ view, onNavigate }: { view: ShopView; onNavigate: (v: 
               </a>
             </div>
           </div>
-        </details>
-        <nav className="topbar-tabs shop-tabs" aria-label="Navigation boutique">
-          {hydrated && user?.role === "client" && <button className={view === "commandes" ? "selected" : ""} onClick={() => onNavigate("commandes")}>Commandes</button>}
-        </nav>
+        </details>}
         <div className="topbar-user">
-          {hydrated && user && <button className="workspace-button" onClick={() => router.push(user.role === "supervisor" ? "/supervisor" : "/client")}>{user.role === "supervisor" ? "Espace admin" : "Espace client"}</button>}
           <button className={`cart-button ${view === "panier" ? "selected" : ""}`} onClick={() => onNavigate("panier")} aria-label={`Panier, ${cartCount} article${cartCount > 1 ? "s" : ""}`} title="Panier">
             <Icon icon={faCartShopping} />
             {cartCount > 0 && <b className="cart-badge">{cartCount}</b>}
@@ -147,17 +232,21 @@ export function ShopNav({ view, onNavigate }: { view: ShopView; onNavigate: (v: 
               </div>
             </>
           ) : (
-            <button className="login-icon-button" onClick={() => router.push("/login")} aria-label="Se connecter" title="Se connecter">
-              <Icon icon={faRightToBracket} />
-            </button>
+            <Link className="login-text-link" href="/login">Connexion</Link>
           )}
         </div>
       </header>
+      {hydrated && user && <button ref={menuToggleRef} className={`menu-toggle shop-menu-toggle${sidebarOpen ? " is-open" : ""}`} onClick={() => user.role === "supervisor" ? router.push("/supervisor") : onToggleSidebar()} aria-label={user.role === "supervisor" ? "Ouvrir l’espace administrateur" : sidebarOpen ? "Masquer le menu" : "Afficher le menu"} aria-expanded={user.role === "client" ? sidebarOpen : undefined}><Icon icon={user.role === "client" && sidebarOpen ? faXmark : faBars} /></button>}
+      {hydrated && user?.role === "client" && sidebarOpen && <button className="client-sidebar-backdrop" onClick={closeSidebar} aria-label="Fermer le menu" />}
       {hydrated && user?.role === "client" && (
-        <aside className="client-sidebar" aria-label="Espace client">
+        <aside className={`client-sidebar${sidebarOpen ? " open" : ""}`} aria-label="Espace client" aria-hidden={!sidebarOpen}>
+          <div className="sidebar-account">
+            <span className="sidebar-account-avatar" aria-hidden="true">{getUserInitials(user.username)}</span>
+            <span className="sidebar-account-name">{user.username}</span>
+          </div>
           <p className="eyebrow">MON ESPACE</p>
           <nav className="client-sidebar-nav" aria-label="Navigation client">
-            <button className={view === "commandes" ? "active" : ""} onClick={() => onNavigate("commandes")}><Icon icon={faBoxOpen} /> <span>Commandes</span></button>
+            <button className={view === "commandes" ? "active" : ""} onClick={() => { onNavigate("commandes"); closeSidebar(); }} tabIndex={sidebarOpen ? 0 : -1}><Icon icon={faBoxOpen} /> <span>Commandes</span></button>
           </nav>
         </aside>
       )}

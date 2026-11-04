@@ -12,6 +12,19 @@ const navItems: { id: View; label: string; icon: typeof faBoxOpen }[] = [
   { id: "promotions", label: "Promotions", icon: faTag },
 ];
 
-export function Sidebar({ view, onNavigate }: { view: View; onNavigate: (view: View) => void }) {
-  return <aside className="sidebar"><button className="brand-mark" aria-label="Accueil" onClick={() => onNavigate("commandes")}><img src="/logo.jpg" alt="" /></button><div className="sidebar-nav">{navItems.map((item) => <button key={item.id} className={`side-nav-item ${view === item.id ? "active" : ""}`} onClick={() => onNavigate(item.id)} title={item.label} aria-label={item.label}><span className="side-icon"><Icon icon={item.icon} /></span><span className="side-label">{item.label}</span></button>)}</div></aside>;
+export function Sidebar({ view, onNavigate, username, open }: { view: View; onNavigate: (view: View) => void; username: string; open: boolean }) {
+  return (
+    <aside id="supervisor-sidebar" className={`sidebar${open ? "" : " collapsed"}`} aria-label="Menu administrateur" aria-hidden={!open} inert={!open}>
+      <div className="sidebar-account">
+        <span className="sidebar-account-avatar" aria-hidden="true">{getUserInitials(username)}</span>
+        <span className="sidebar-account-name">{username}</span>
+      </div>
+      <div className="sidebar-nav">{navItems.map((item) => <button key={item.id} className={`side-nav-item ${view === item.id ? "active" : ""}`} onClick={() => onNavigate(item.id)} title={item.label} aria-label={item.label}><span className="side-icon"><Icon icon={item.icon} /></span><span className="side-label">{item.label}</span></button>)}</div>
+    </aside>
+  );
+}
+
+function getUserInitials(username: string): string {
+  const parts = username.trim().split(/[.\s_-]+/).filter(Boolean);
+  return `${parts[0]?.[0] ?? "U"}${parts[1]?.[0] ?? parts[0]?.[1] ?? ""}`.toUpperCase();
 }

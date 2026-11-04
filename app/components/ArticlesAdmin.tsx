@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { apiFetch } from "../lib/api";
 import type { Article } from "../interfaces/Article";
+import { discountedUnitPrice, isPromotionInDateRange } from "../lib/promotions";
+import { formatPrice } from "../lib/store";
 import { faPen, faTrash, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { Icon } from "./Icon";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -58,9 +60,9 @@ export function ArticlesAdmin() {
   }, []);
 
   useEffect(() => {
-    apiFetch<{ promotions: PromotionOption[] }>("/api/promotions")
-      .then((data) => setPromotions(data.promotions.filter((promotion) => promotion.isActive)))
-      .catch(() => setPromotions([]));
+    apiFetch<{ promotions: PromotionOption[] }>("/api/promotions/admin")
+      .then((data) => setPromotions(data.promotions))
+      .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Impossible de charger les promotions."));
   }, []);
 
   function resetForm() {
@@ -150,7 +152,10 @@ export function ArticlesAdmin() {
     {error && <p className="login-error" role="alert">{error}</p>}
     <div className="knowledge-toolbar"><input className="knowledge-search" value={query} onChange={(event) => { setPage(1); setQuery(event.target.value); }} placeholder="Rechercher un article..." aria-label="Rechercher un article" /></div>
     <div className="knowledge-layout">
-      <section className="panel knowledge-list crud-table"><div className="list-header"><strong>Catalogue</strong><span className="muted-label">Page {page} / {totalPages}</span></div><div className="crud-table-head"><span>Article</span><span>Catégorie</span><span>Prix</span><span>Stock</span><span>Actions</span></div>{loading ? <p className="support-empty muted-label">Chargement...</p> : articles.length === 0 ? <p className="support-empty muted-label">Aucun article trouvé.</p> : articles.map((article) => <article className="knowledge-item crud-table-row" key={article.id}><div className="crud-primary">{article.image && <img src={article.image} alt="" />}<strong>{article.nom}</strong></div><span>{article.categorie}</span><span>{article.prix} DT</span><span>{article.stock}</span><div className="knowledge-actions"><button className="icon-button" onClick={() => editArticle(article)} aria-label={`Modifier ${article.nom}`} title="Modifier"><Icon icon={faPen} /></button><button className="icon-button danger-button" onClick={() => setArticleToDelete(article)} aria-label={`Supprimer ${article.nom}`} title="Supprimer"><Icon icon={faTrash} /></button></div></article>)}</section>
+      <section className="panel knowledge-list crud-table"><div className="list-header"><strong>Catalogue</strong><span className="muted-label">Page {page} / {totalPages}</span></div><div className="crud-table-head"><span>Article</span><span>Catégorie</span><span>Prix</span><span>Stock</span><span>Actions</span></div>{loading ? <p className="support-empty muted-label">Chargement...</p> : articles.length === 0 ? <p className="support-empty muted-label">Aucun article trouvé.</p> : articles.map((article) => {
+        const promotion = article.promotion && isPromotionInDateRange(article.promotion) && article.promotion.discountPercent > 0 ? article.promotion : null;
+        return <article className="knowledge-item crud-table-row" key={article.id}><div className="crud-primary">{article.image && <img src={article.image} alt="" />}<strong>{article.nom}</strong></div><span>{article.categorie}</span><span className="admin-article-prices">{promotion ? <><del>{formatPrice(article.prix)}</del><strong>{formatPrice(discountedUnitPrice(article.prix, promotion.discountPercent))}</strong></> : formatPrice(article.prix)}</span><span>{article.stock}</span><div className="knowledge-actions"><button className="icon-button" onClick={() => editArticle(article)} aria-label={`Modifier ${article.nom}`} title="Modifier"><Icon icon={faPen} /></button><button className="icon-button danger-button" onClick={() => setArticleToDelete(article)} aria-label={`Supprimer ${article.nom}`} title="Supprimer"><Icon icon={faTrash} /></button></div></article>;
+      })}</section>
       <form className="panel knowledge-form" onSubmit={save}>
         <div className="list-header">
           <strong>{editingId ? "Modifier l'article" : "Créer un article"}</strong>
@@ -171,7 +176,7 @@ export function ArticlesAdmin() {
           <span>Promotion</span>
           <select value={form.promotionId} onChange={(event) => setForm({ ...form, promotionId: event.target.value })}>
             <option value="">Aucune promotion</option>
-            {promotions.map((promotion) => <option key={promotion.id} value={promotion.id}>{promotion.title} (-{promotion.discountPercent} %)</option>)}
+            {promotions.map((promotion) => <option key={promotion.id} value={promotion.id}>{promotion.title} (-{promotion.discountPercent} %){promotion.isActive ? "" : " — désactivée"}</option>)}
           </select>
           {promotions.length === 0 && <small className="muted-label">Aucune promotion active disponible.</small>}
         </label>

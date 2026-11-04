@@ -63,16 +63,16 @@ app/                  Next.js App Router, écrans et composants client
 app/components/       Boutique, Inbox, FAQ, Pilotage et navigation
 app/lib/               API frontend, authentification et état local de compatibilité
 backend/src/           API Express, middleware, sécurité et routes métier
-backend/prisma/        Schéma PostgreSQL et seed de démonstration
+backend/prisma/        Schéma MySQL et seed de démonstration
 examples/              Exports JSON des workflows et données de démonstration
 ```
 
-Le frontend utilise Next.js/React. Le backend expose une API Express protégée par cookie JWT. Prisma gère MySQL. Les promotions et leurs périodes sont persistées côté backend, avec des dates évaluées en UTC.
+Le frontend utilise Next.js/React. Le backend expose une API Express protégée par cookie JWT. Prisma gère MySQL. Les promotions (titre, remise et dates) sont persistées côté backend, avec des dates évaluées en UTC et des slugs générés depuis le titre.
 
 ## Choix techniques
 
 - **Next.js App Router** pour les espaces Client, Agent et Supervisor.
-- **Express + Prisma** pour séparer les règles métier et l’accès PostgreSQL.
+- **Express + Prisma** pour séparer les règles métier et l’accès MySQL.
 - **Cookie JWT HttpOnly** pour protéger les routes authentifiées.
 - **Zod** pour valider les entrées HTTP.
 - **FAQ avec recherche pondérée** sur titre, catégorie et contenu ; le provider IA reste optionnel.

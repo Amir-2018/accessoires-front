@@ -1,16 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createOrder, formatPrice, getSessionUser, saveGuestOrderId, type GuestCustomer } from "../lib/store";
 import { useCart } from "./shop-shell";
 import { apiFetch } from "../lib/api";
-import { faMinus, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faMinus, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { Icon } from "./Icon";
 import { discountedUnitPrice, isPromotionInDateRange } from "../lib/promotions";
 
-export function Panier({ goCommandes }: { goCommandes: () => void }) {
-  const router = useRouter();
+export function Panier({ onReturnHome }: { onReturnHome: () => void }) {
   const { cart, cartLines, cartTotal, changeQty, clearCart, promotionSlug } = useCart();
   const discountTotal = cartLines.reduce((discount, article) => {
     if (!article.promotion || !isPromotionInDateRange(article.promotion) || article.promotion.discountPercent <= 0) return discount;
@@ -30,6 +28,8 @@ export function Panier({ goCommandes }: { goCommandes: () => void }) {
   const [guestError, setGuestError] = useState("");
   const [orderError, setOrderError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [clientTelephone, setClientTelephone] = useState("");
+  const [successReference, setSuccessReference] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -39,17 +39,42 @@ export function Panier({ goCommandes }: { goCommandes: () => void }) {
     return () => window.clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    if (!successReference) return;
+    const timer = window.setTimeout(onReturnHome, 3000);
+    return () => window.clearTimeout(timer);
+  }, [onReturnHome, successReference]);
+
+  if (successReference) {
+    return (
+      <div className="view-content order-success-stage">
+        <section className="order-confirmation" aria-labelledby="order-success-title" aria-describedby="order-success-description">
+          <span className="order-confirmation-success-icon"><Icon icon={faCheck} /></span>
+          <h2 id="order-success-title">Commande confirmée !</h2>
+          <p id="order-success-description" className="muted-label">Votre commande a été enregistrée avec succès.</p>
+          <strong className="order-number">{successReference}</strong>
+          <p className="order-confirmation-hint">Redirection vers l’accueil dans quelques instants…</p>
+          <button className="dark-button" onClick={onReturnHome}>Retourner à l’accueil</button>
+        </section>
+      </div>
+    );
+  }
+
   async function order() {
     if (cartLines.length === 0) return;
     const s = getSessionUser();
     if (s?.role === "client") {
+      if (clientTelephone.trim().length < 5 || clientTelephone.trim().length > 30) {
+        setOrderError("Veuillez saisir un numéro de téléphone valide (5 à 30 caractères).");
+        return;
+      }
       const items = cartLines.map((a) => ({ articleId: a.id, quantite: cart[a.id] ?? 0 }));
       setSubmitting(true);
       setOrderError("");
       try {
         const data = await apiFetch<{ order: { reference: string; subtotal?: number; discountTotal?: number; total?: number } }>("/api/orders", {
           method: "POST",
-          body: JSON.stringify({ items, promotionSlug, nom: s.username, prenom: s.username, email: s.email, telephone: "0000000000", adresse: "Adresse du compte" }),
+          body: JSON.stringify({ items, promotionSlug, nom: s.username, prenom: s.username, email: s.email, telephone: clientTelephone.trim(), adresse: "Adresse du compte" }),
         });
         createOrder(s, cartLines.map((a) => ({ article: a, quantite: cart[a.id] ?? 0 })), {
           reference: data.order.reference,
@@ -57,9 +82,10 @@ export function Panier({ goCommandes }: { goCommandes: () => void }) {
           subtotal: data.order.subtotal,
           discountTotal: data.order.discountTotal,
           total: data.order.total,
+          telephone: clientTelephone.trim(),
         });
         clearCart();
-        goCommandes();
+        setSuccessReference(data.order.reference);
       } catch (reason) {
         setOrderError(reason instanceof Error ? reason.message : "La commande n’a pas pu être enregistrée. Réessayez.");
       } finally {
@@ -96,7 +122,7 @@ export function Panier({ goCommandes }: { goCommandes: () => void }) {
       saveGuestOrderId(orderCreated.id);
       clearCart();
       setGuestError("");
-      router.push("/");
+      setSuccessReference(data.order.reference);
     } catch (reason) {
       setGuestError(reason instanceof Error ? reason.message : "La commande n’a pas pu être enregistrée. Réessayez.");
     } finally {
@@ -133,7 +159,16 @@ export function Panier({ goCommandes }: { goCommandes: () => void }) {
             {discountTotal > 0 && <p className="cart-discount-row">Réductions {appliedPromotionNames.length > 0 && <span>({appliedPromotionNames.join(", ")})</span>} <strong>− {formatPrice(discountTotal)}</strong></p>}
             <p className="cart-grand-total">Total à payer <strong>{formatPrice(orderTotal)}</strong></p>
           </div>
-          {hydrated && logged ? <><button className="dark-button" onClick={order} disabled={submitting}>{submitting ? "Enregistrement..." : "Passer commande"}</button>{orderError && <p className="login-error">{orderError}</p>}</> : hydrated ? (
+          {hydrated && logged ? (
+            <div className="guest-order">
+              <label className="login-field">
+                <span>Téléphone de contact</span>
+                <input type="tel" autoComplete="tel" value={clientTelephone} onChange={(event) => setClientTelephone(event.target.value)} placeholder="+216 XX XXX XXX" />
+              </label>
+              {orderError && <p className="login-error" role="alert">{orderError}</p>}
+              <button className="dark-button" onClick={order} disabled={submitting}>{submitting ? "Enregistrement..." : "Passer commande"}</button>
+            </div>
+          ) : hydrated ? (
             <div className="guest-order">
               <p><strong>Vos coordonnées de livraison</strong></p>
               <div className="guest-form">

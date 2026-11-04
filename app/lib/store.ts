@@ -88,7 +88,7 @@ export function getOrders(role: UserRole, clientId?: string): Order[] {
 export function createOrder(
   user: SessionUser | GuestCustomer,
   items: { article: Article; quantite: number }[],
-  options: { reference?: string; promotionSlug?: string | null; subtotal?: number; discountTotal?: number; total?: number } = {},
+  options: { reference?: string; promotionSlug?: string | null; subtotal?: number; discountTotal?: number; total?: number; telephone?: string } = {},
 ): Order {
   const isGuest = "telephone" in user;
   const orderItems = items.map((i) => {
@@ -118,7 +118,7 @@ export function createOrder(
           clientTelephone: user.telephone,
           clientAdresse: user.adresse,
         }
-      : { clientEmail: user.email }),
+      :       { clientEmail: user.email, ...(options.telephone ? { clientTelephone: options.telephone } : {}) }),
     items: orderItems,
     subtotal,
     discountTotal,
