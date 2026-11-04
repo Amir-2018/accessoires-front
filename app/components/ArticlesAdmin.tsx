@@ -33,6 +33,7 @@ export function ArticlesAdmin() {
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [articleToDelete, setArticleToDelete] = useState<Article | null>(null);
+  const [confirmEdit, setConfirmEdit] = useState(false);
 
   async function loadArticles() {
     setLoading(true);
@@ -115,6 +116,15 @@ export function ArticlesAdmin() {
 
   async function save(event: FormEvent) {
     event.preventDefault();
+    if (editingId) {
+      setConfirmEdit(true);
+      return;
+    }
+
+    await persistArticle();
+  }
+
+  async function persistArticle() {
     setSaving(true);
     setError("");
     try {
@@ -205,6 +215,7 @@ export function ArticlesAdmin() {
       </form>
     </div>
     <div className="pagination-controls"><button className="outline-button" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>Précédent</button><span className="muted-label">Page {page} sur {totalPages}</span><button className="outline-button" disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)}>Suivant</button></div>
+    {confirmEdit && <ConfirmDialog title="Confirmer la modification ?" description={`Les modifications apportées à « ${form.nom} » seront enregistrées.`} variant="primary" confirmLabel="Enregistrer" onCancel={() => setConfirmEdit(false)} onConfirm={() => { setConfirmEdit(false); void persistArticle(); }} />}
     {articleToDelete && <ConfirmDialog title="Supprimer cet article ?" description={`« ${articleToDelete.nom} » sera supprimé définitivement du catalogue.`} onCancel={() => setArticleToDelete(null)} onConfirm={() => { const article = articleToDelete; setArticleToDelete(null); void remove(article); }} />}
   </div>;
 }

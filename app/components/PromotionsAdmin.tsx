@@ -35,6 +35,8 @@ export function PromotionsAdmin() {
   const [success, setSuccess] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [promotionToDelete, setPromotionToDelete] = useState<PromotionRecord | null>(null);
+  const [confirmEdit, setConfirmEdit] = useState(false);
+  const [promotionToToggle, setPromotionToToggle] = useState<{ promotion: PromotionRecord; isActive: boolean } | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -86,6 +88,16 @@ export function PromotionsAdmin() {
       return;
     }
 
+    if (editingId) {
+      setConfirmEdit(true);
+      return;
+    }
+
+    await persistPromotion();
+  }
+
+  async function persistPromotion() {
+    if (!apiReady) return;
     setSaving(true);
     setError("");
     setSuccess("");
@@ -175,7 +187,7 @@ export function PromotionsAdmin() {
                       type="checkbox"
                       checked={promotion.isActive}
                       disabled={!apiReady || togglingId === promotion.id}
-                      onChange={(event) => void setPromotionActive(promotion, event.target.checked)}
+                      onChange={(event) => setPromotionToToggle({ promotion, isActive: event.target.checked })}
                       aria-label={`${promotion.isActive ? "Désactiver" : "Activer"} ${promotion.title}`}
                     />
                     <span>{promotion.isActive ? getPromotionState(promotion).label : "Désactivée"}</span>
@@ -218,6 +230,30 @@ export function PromotionsAdmin() {
           </button>
         </form>
       </div>
+      {confirmEdit && (
+        <ConfirmDialog
+          title="Confirmer la modification ?"
+          description={`Les modifications apportées à « ${form.title} » seront enregistrées.`}
+          variant="primary"
+          confirmLabel="Enregistrer"
+          onCancel={() => setConfirmEdit(false)}
+          onConfirm={() => { setConfirmEdit(false); void persistPromotion(); }}
+        />
+      )}
+      {promotionToToggle && (
+        <ConfirmDialog
+          title={`Confirmer la ${promotionToToggle.isActive ? "activation" : "désactivation"} ?`}
+          description={`La promotion « ${promotionToToggle.promotion.title} » sera ${promotionToToggle.isActive ? "activée" : "désactivée"}.`}
+          variant="primary"
+          confirmLabel="Confirmer"
+          onCancel={() => setPromotionToToggle(null)}
+          onConfirm={() => {
+            const change = promotionToToggle;
+            setPromotionToToggle(null);
+            void setPromotionActive(change.promotion, change.isActive);
+          }}
+        />
+      )}
       {promotionToDelete && (
         <ConfirmDialog
           title="Supprimer cette promotion ?"

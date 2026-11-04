@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, type KeyboardEvent } from "react";
-import { faTrash, faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { faCheck, faTrash, faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
 import { Icon } from "./Icon";
 
 type ConfirmDialogProps = {
@@ -9,11 +10,23 @@ type ConfirmDialogProps = {
   description: string;
   onCancel: () => void;
   onConfirm: () => void;
+  variant?: "danger" | "primary";
+  confirmLabel?: string;
+  confirmIcon?: IconDefinition;
 };
 
-export function ConfirmDialog({ title, description, onCancel, onConfirm }: ConfirmDialogProps) {
+export function ConfirmDialog({
+  title,
+  description,
+  onCancel,
+  onConfirm,
+  variant = "danger",
+  confirmLabel,
+  confirmIcon,
+}: ConfirmDialogProps) {
   const dialogRef = useRef<HTMLElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const isDanger = variant === "danger";
 
   useEffect(() => {
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -59,13 +72,13 @@ export function ConfirmDialog({ title, description, onCancel, onConfirm }: Confi
         aria-describedby="confirm-dialog-description"
         onKeyDown={handleKeyDown}
       >
-        <span className="confirm-dialog-icon"><Icon icon={faTriangleExclamation} /></span>
+        <span className={`confirm-dialog-icon${isDanger ? "" : " confirm-dialog-icon-primary"}`}><Icon icon={faTriangleExclamation} /></span>
         <h2 id="confirm-dialog-title">{title}</h2>
         <p id="confirm-dialog-description">{description}</p>
         <div className="confirm-dialog-actions">
           <button ref={cancelButtonRef} className="outline-button" onClick={onCancel}>Annuler</button>
-          <button className="dark-button confirm-dialog-delete" onClick={onConfirm}>
-            <Icon icon={faTrash} /> Supprimer
+          <button className={`dark-button ${isDanger ? "confirm-dialog-delete" : "confirm-dialog-confirm"}`} onClick={onConfirm}>
+            <Icon icon={confirmIcon ?? (isDanger ? faTrash : faCheck)} /> {confirmLabel ?? (isDanger ? "Supprimer" : "Confirmer")}
           </button>
         </div>
       </section>

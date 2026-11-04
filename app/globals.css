@@ -674,6 +674,7 @@ a.shop-about-contact:hover, .shop-about-map-link:hover { border-color: var(--lim
 .confirm-dialog { width: min(430px, 100%); padding: 30px; border: 1px solid rgba(225,200,187,.8); border-radius: 14px; background: linear-gradient(155deg, #fffdfa 0%, #fff8f3 100%); box-shadow: 0 28px 80px rgba(35,22,20,.28); text-align: center; animation: confirm-dialog-in .24s cubic-bezier(.2,.7,.2,1) both; }
 .confirm-dialog-icon { display: grid; width: 52px; height: 52px; place-items: center; margin: 0 auto 17px; border: 1px solid #f0c9bd; border-radius: 16px; background: #fae9e3; color: var(--red); }
 .confirm-dialog-icon svg { width: 20px; height: 20px; }
+.confirm-dialog-icon-primary { border-color: rgba(182,115,106,.28); background: #f7e7df; color: var(--ink); }
 .confirm-dialog h2 { margin: 0 0 9px; font-family: Georgia, "Times New Roman", serif; font-size: 24px; font-weight: 500; letter-spacing: 0; }
 .confirm-dialog > p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
 .confirm-dialog-actions { display: flex; justify-content: center; gap: 10px; margin-top: 24px; }
@@ -682,6 +683,8 @@ a.shop-about-contact:hover, .shop-about-map-link:hover { border-color: var(--lim
 .confirm-dialog-delete { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-color: var(--red); background: var(--red); }
 .confirm-dialog-delete:hover { border-color: var(--ink); background: var(--ink); }
 .confirm-dialog-delete svg { width: 13px; height: 13px; }
+.confirm-dialog-confirm { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.confirm-dialog-confirm svg { width: 13px; height: 13px; }
 .confirm-dialog button:focus-visible { outline: 3px solid #d88a78; outline-offset: 3px; }
 @keyframes confirm-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes confirm-dialog-in { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }

@@ -15,6 +15,7 @@ export function CategoriesAdmin() {
   const [editingName, setEditingName] = useState("");
   const [error, setError] = useState("");
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [categoryToRename, setCategoryToRename] = useState<Category | null>(null);
 
   async function load() {
     try {
@@ -53,6 +54,15 @@ export function CategoriesAdmin() {
     }
   }
 
+  function requestRename(category: Category) {
+    if (!editingName.trim()) {
+      setError("Le nom de la catégorie ne peut pas être vide.");
+      return;
+    }
+    setError("");
+    setCategoryToRename(category);
+  }
+
   async function remove(category: Category) {
     try {
       await apiFetch(`/api/categories/${category.id}`, { method: "DELETE" });
@@ -66,9 +76,10 @@ export function CategoriesAdmin() {
     <div className="page-heading"><div><p className="eyebrow">CATALOGUE</p><h1>Catégories</h1><p className="heading-sub">Créez les catégories disponibles pour les articles.</p></div></div>
     {error && <p className="login-error" role="alert">{error}</p>}
     <div className="knowledge-layout">
-      <section className="panel knowledge-list crud-table category-list"><div className="list-header"><strong>Catégories</strong><span className="muted-label">{categories.length}</span></div><div className="crud-table-head"><span>Nom</span><span>Actions</span></div>{categories.map((category) => <article className="knowledge-item crud-table-row" key={category.id}>{editingId === category.id ? <div className="category-edit"><input value={editingName} onChange={(event) => setEditingName(event.target.value)} /><button className="dark-button" onClick={() => void rename(category)}>Enregistrer</button><button className="outline-button" onClick={() => setEditingId(null)}>Annuler</button></div> : <><strong>{category.nom}</strong><div className="knowledge-actions"><button className="icon-button" onClick={() => { setEditingId(category.id); setEditingName(category.nom); }} aria-label={`Modifier ${category.nom}`} title="Modifier"><Icon icon={faPen} /></button><button className="icon-button danger-button" onClick={() => setCategoryToDelete(category)} aria-label={`Supprimer ${category.nom}`} title="Supprimer"><Icon icon={faTrash} /></button></div></>}</article>)}</section>
+      <section className="panel knowledge-list crud-table category-list"><div className="list-header"><strong>Catégories</strong><span className="muted-label">{categories.length}</span></div><div className="crud-table-head"><span>Nom</span><span>Actions</span></div>{categories.map((category) => <article className="knowledge-item crud-table-row" key={category.id}>{editingId === category.id ? <div className="category-edit"><input value={editingName} onChange={(event) => setEditingName(event.target.value)} /><button className="dark-button" onClick={() => requestRename(category)}>Enregistrer</button><button className="outline-button" onClick={() => setEditingId(null)}>Annuler</button></div> : <><strong>{category.nom}</strong><div className="knowledge-actions"><button className="icon-button" onClick={() => { setEditingId(category.id); setEditingName(category.nom); }} aria-label={`Modifier ${category.nom}`} title="Modifier"><Icon icon={faPen} /></button><button className="icon-button danger-button" onClick={() => setCategoryToDelete(category)} aria-label={`Supprimer ${category.nom}`} title="Supprimer"><Icon icon={faTrash} /></button></div></>}</article>)}</section>
       <form className="panel knowledge-form" onSubmit={create}><div className="list-header"><strong>Créer une catégorie</strong></div><label className="login-field"><span>Nom de la catégorie</span><input required minLength={2} maxLength={80} value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex. Robes" /></label><button className="dark-button" type="submit">Créer la catégorie</button></form>
     </div>
+    {categoryToRename && <ConfirmDialog title="Confirmer la modification ?" description={`Le nom de la catégorie « ${categoryToRename.nom} » sera remplacé par « ${editingName.trim()} ».`} variant="primary" confirmLabel="Enregistrer" onCancel={() => setCategoryToRename(null)} onConfirm={() => { const category = categoryToRename; setCategoryToRename(null); void rename(category); }} />}
     {categoryToDelete && <ConfirmDialog title="Supprimer cette catégorie ?" description={`« ${categoryToDelete.nom} » sera supprimée définitivement.`} onCancel={() => setCategoryToDelete(null)} onConfirm={() => { const category = categoryToDelete; setCategoryToDelete(null); void remove(category); }} />}
   </div>;
 }

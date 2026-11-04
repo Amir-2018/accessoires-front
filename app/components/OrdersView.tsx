@@ -18,6 +18,7 @@ export function OrdersView() {
   const [filter, setFilter] = useState<"Toutes" | OrderStatus>("Toutes");
   const [refresh, setRefresh] = useState(0);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+  const [statusChange, setStatusChange] = useState<{ orderId: string; status: OrderStatus } | null>(null);
 
   const orders = useMemo(
     () => getOrders("supervisor").filter((o) => filter === "Toutes" || o.status === filter),
@@ -71,7 +72,7 @@ export function OrdersView() {
                     <td><span className="status-pill status-in-progress">{ORDER_STATUS_LABELS[o.status]}</span></td>
                     <td>{new Date(o.createdAt).toLocaleString("fr-FR")}</td>
                     <td className="table-actions">
-                      <select value={o.status} onChange={(e) => setStatus(o.id, e.target.value as OrderStatus)} aria-label={`Statut de ${o.id}`}>
+                      <select value={o.status} onChange={(e) => setStatusChange({ orderId: o.id, status: e.target.value as OrderStatus })} aria-label={`Statut de ${o.id}`}>
                         {STATUSES.map((s) => <option key={s} value={s}>{ORDER_STATUS_LABELS[s]}</option>)}
                       </select>
                       <button className="icon-button danger-button" type="button" onClick={() => setOrderToDelete(o.id)} aria-label={`Supprimer la commande ${o.id}`} title="Supprimer la commande"><Icon icon={faTrash} /></button>
@@ -81,6 +82,20 @@ export function OrdersView() {
           </tbody>
         </table>
       </div>
+      {statusChange && (
+        <ConfirmDialog
+          title="Confirmer le changement de statut ?"
+          description={`La commande ${statusChange.orderId} passera au statut « ${ORDER_STATUS_LABELS[statusChange.status]} ».`}
+          variant="primary"
+          confirmLabel="Confirmer"
+          onCancel={() => setStatusChange(null)}
+          onConfirm={() => {
+            const change = statusChange;
+            setStatusChange(null);
+            setStatus(change.orderId, change.status);
+          }}
+        />
+      )}
       {orderToDelete && (
         <ConfirmDialog
           title="Supprimer cette commande ?"

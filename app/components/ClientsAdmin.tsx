@@ -22,6 +22,7 @@ export function ClientsAdmin() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [confirmEdit, setConfirmEdit] = useState(false);
 
   async function loadClients() {
     setLoading(true);
@@ -54,6 +55,15 @@ export function ClientsAdmin() {
 
   async function save(event: FormEvent) {
     event.preventDefault();
+    if (editingId) {
+      setConfirmEdit(true);
+      return;
+    }
+
+    await persistClient();
+  }
+
+  async function persistClient() {
     setSaving(true);
     setError("");
     try {
@@ -86,6 +96,7 @@ export function ClientsAdmin() {
       <form className="panel knowledge-form" onSubmit={save}><div className="list-header"><strong>{editingId ? "Modifier le client" : "Créer un client"}</strong>{editingId && <button type="button" className="outline-button" onClick={resetForm}>Annuler</button>}</div><label className="login-field"><span>Nom d’utilisateur</span><input required minLength={2} value={form.username} onChange={(event) => setForm({ ...form, username: event.target.value })} /></label><label className="login-field"><span>Email</span><input required type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label><label className="login-field"><span>{editingId ? "Nouveau mot de passe (optionnel)" : "Mot de passe"}</span><input required={!editingId} minLength={8} type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} /></label><button className="dark-button" type="submit" disabled={saving}>{saving ? "Enregistrement..." : editingId ? "Enregistrer" : "Créer le client"}</button></form>
     </div>
     <div className="pagination-controls"><button className="outline-button" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>Précédent</button><span className="muted-label">Page {page} sur {totalPages}</span><button className="outline-button" disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)}>Suivant</button></div>
+    {confirmEdit && <ConfirmDialog title="Confirmer la modification ?" description={`Les modifications apportées au compte « ${form.username} » seront enregistrées.`} variant="primary" confirmLabel="Enregistrer" onCancel={() => setConfirmEdit(false)} onConfirm={() => { setConfirmEdit(false); void persistClient(); }} />}
     {clientToDelete && <ConfirmDialog title="Supprimer ce client ?" description={`Le compte « ${clientToDelete.username} » sera supprimé définitivement.`} onCancel={() => setClientToDelete(null)} onConfirm={() => { const client = clientToDelete; setClientToDelete(null); void remove(client); }} />}
   </div>;
 }
