@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "next dev",
     "dev:full": "pnpm --parallel --recursive --include-workspace-root --if-present dev",
-    "prebuild": "pnpm --dir backend prisma:generate",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

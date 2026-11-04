@@ -37,11 +37,11 @@ Sur Render, créer deux services :
 - Frontend : `pnpm install --frozen-lockfile && pnpm build`, puis `pnpm start`, avec `NEXT_PUBLIC_API_URL` réglée sur l’URL publique backend.
 - Backend : `pnpm install --frozen-lockfile && pnpm --dir backend prisma:generate && pnpm --dir backend build`, puis `pnpm --dir backend start`, avec `FRONTEND_URL` réglée sur l’URL publique frontend.
 
-Le build de production génère automatiquement Prisma Client :
+Le build du frontend ne dépend pas du package backend et ne génère pas Prisma Client. Pour déployer le backend, exécuter la génération Prisma depuis son propre service avant son build :
 
 ```bash
-pnpm build
-pnpm start
+pnpm --dir backend prisma:generate
+pnpm --dir backend build
 ```
 
 ## Comptes de démonstration
