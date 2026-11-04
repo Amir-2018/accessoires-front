@@ -9,15 +9,16 @@ import { ArticlesAdmin } from "../components/ArticlesAdmin";
 import { ClientsAdmin } from "../components/ClientsAdmin";
 import { CategoriesAdmin } from "../components/CategoriesAdmin";
 import { PromotionsAdmin } from "../components/PromotionsAdmin";
+import { DashboardOverview } from "../components/DashboardOverview";
 import { faBars, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { Icon } from "../components/Icon";
 
-type SupView = "commandes" | "articles" | "clients" | "categories" | "promotions";
+type SupView = "dashboard" | "commandes" | "articles" | "clients" | "categories" | "promotions";
 
 /** Compte superviseur : sidebar de gestion + pilotage. */
 export default function SupervisorSpace() {
   const { user, ready, signOut } = useRequireRole(["supervisor"]);
-  const [view, setView] = useState<SupView>("commandes");
+  const [view, setView] = useState<SupView>("dashboard");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -44,6 +45,7 @@ export default function SupervisorSpace() {
         open={sidebarOpen}
       />
       <div className="page-main">
+        {view === "dashboard" && <DashboardOverview onNavigate={setView} />}
         {view === "commandes" && <OrdersView />}
         {view === "articles" && <ArticlesAdmin />}
         {view === "clients" && <ClientsAdmin />}

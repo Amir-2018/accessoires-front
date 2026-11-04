@@ -1,10 +1,11 @@
 "use client";
-import { faBoxOpen, faTags, faUsers, faLayerGroup, faTag } from "@fortawesome/free-solid-svg-icons";
+import { faBoxOpen, faTags, faUsers, faLayerGroup, faTag, faChartPie } from "@fortawesome/free-solid-svg-icons";
 import { Icon } from "./Icon";
 
-export type View = "articles" | "commandes" | "clients" | "categories" | "promotions";
+export type View = "dashboard" | "articles" | "commandes" | "clients" | "categories" | "promotions";
 
 const navItems: { id: View; label: string; icon: typeof faBoxOpen }[] = [
+  { id: "dashboard", label: "Tableau de bord", icon: faChartPie },
   { id: "commandes", label: "Commandes", icon: faBoxOpen },
   { id: "articles", label: "Articles", icon: faTags },
   { id: "clients", label: "Clients", icon: faUsers },
