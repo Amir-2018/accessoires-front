@@ -13,7 +13,7 @@ cp backend/.env.example backend/.env
 
 Renseigner `DATABASE_URL` et `JWT_SECRET` dans `backend/.env`. Les valeurs de `.env.example` sont uniquement des placeholders.
 
-Pour le frontend déployé séparément, définir `NEXT_PUBLIC_API_URL` avant le build avec l’URL publique du backend. Le frontend cible par défaut `https://accesoires-back-3l9dgq2ca-amir-dev1.vercel.app` en production et `http://localhost:4000` en développement ; `NEXT_PUBLIC_API_URL` remplace ces valeurs. Cette variable est intégrée au bundle Next.js au moment du build.
+Le frontend cible par défaut `https://ouou-back.onrender.com` en production et en développement. Pour utiliser un autre backend (par exemple `http://localhost:4000`), définir `NEXT_PUBLIC_API_URL` dans `.env.local` ou dans l’environnement de build. Cette variable est intégrée au bundle Next.js au moment du build.
 
 Initialiser Prisma et les données de démonstration :
 

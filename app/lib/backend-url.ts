@@ -1,9 +1,8 @@
-const DEPLOYED_BACKEND_URL = "https://accesoires-back-3l9dgq2ca-amir-dev1.vercel.app";
+const DEPLOYED_BACKEND_URL = "https://ouou-back.onrender.com";
 
 export function getBackendUrl(): string {
   const configuredUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
   if (configuredUrl) return configuredUrl.replace(/\/+$/, "");
-  if (process.env.NODE_ENV !== "production") return "http://localhost:4000";
   return DEPLOYED_BACKEND_URL;
 }
 
