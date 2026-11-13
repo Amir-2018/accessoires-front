@@ -138,8 +138,8 @@ export function PromoSection({ onExplore }: { onExplore: () => void }) {
         <button className="outline-button promo-all-button" onClick={onExplore}>
           Voir tous les articles <Icon icon={faArrowRightLong} />
         </button>
-      </div>
-      {loadError ? <p className="login-error" role="alert">{loadError}</p> : promotions.length === 0 ? <p className="support-empty muted-label">Aucune promotion active aujourd’hui. Vérifiez les dates de validité dans l’espace superviseur.</p> : <div
+      </div>Aucune promotion active aujourd’hui. Vérifiez les dates de validité dans l’espace superviseur
+      {loadError ? <p className="login-error" role="alert">{loadError}</p> : promotions.length === 0 ? <p className="support-empty muted-label">.</p> : <div
         className="promo-carousel"
         data-paused={isPaused || isHovered || isFocused || prefersReducedMotion}
         onMouseEnter={() => setIsHovered(true)}

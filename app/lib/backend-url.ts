@@ -1,4 +1,6 @@
-const DEPLOYED_BACKEND_URL = "https://ouou-back.onrender.com";
+const LINKONLINE = "https://ouou-back.onrender.com"
+const LINKLOCAL = "http://localhost:4000" 
+const DEPLOYED_BACKEND_URL = LINKLOCAL ;
 
 export function getBackendUrl(): string {
   const configuredUrl = process.env.NEXT_PUBLIC_API_URL?.trim();

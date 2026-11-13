@@ -45,6 +45,7 @@ export default function LoginPage() {
       : apiFetch<{ user: Omit<User, "password"> }>("/api/auth/login", { method: "POST", body: JSON.stringify({ identifier: id, password }) });
     request
       .then(({ user }) => {
+        console.log("User logged in:", user);
         localStorage.setItem("zen:user", JSON.stringify(user));
         router.push(defaultRoute(user.role));
       })
